@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
+import org.christianalexandre.remotecontroller.domain.WebSocketState
 import org.christianalexandre.remotecontroller.domain.WebsocketRepository
 import org.christianalexandre.remotecontroller.factories.Platform
 import org.christianalexandre.remotecontroller.factories.getPlatform
@@ -29,6 +30,7 @@ fun WifiChooser(
     val platform = getPlatform()
     var hasPermission by remember { mutableStateOf(false) }
     var ssid by remember { mutableStateOf<String?>(null) }
+    val webSocketState by websocketRepository.state.collectAsState()
     // endregion
 
     // region android
@@ -65,6 +67,12 @@ fun WifiChooser(
         }
     }
 
+    LaunchedEffect(webSocketState) {
+        if (webSocketState is WebSocketState.Connected) {
+            onNavigation(Screen.Cockpit)
+        }
+    }
+
     Column(
         modifier = Modifier
             .systemBarsPadding()
@@ -95,12 +103,17 @@ fun WifiChooser(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-//            Button(onClick = { onNavigation(Screen.Cockpit) }) {
-//                Text("Handshake")
-//            }
             Button(onClick = { websocketRepository.connect("ws://192.168.4.1:8080") }) {
                 Text("Handshake")
             }
+        }
+
+        when (val state = webSocketState) {
+            is WebSocketState.Error -> {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Error: ${state.message}", color = MaterialTheme.colorScheme.error)
+            }
+            else -> {}
         }
     }
 }
