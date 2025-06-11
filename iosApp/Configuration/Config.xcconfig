@@ -1,0 +1,7 @@
+TEAM_ID=
+
+PRODUCT_NAME=Remote Controller KMM
+PRODUCT_BUNDLE_IDENTIFIER=org.christianalexandre.remotecontroller.RemoteControllerKMM$(TEAM_ID)
+
+CURRENT_PROJECT_VERSION=1
+MARKETING_VERSION=1.0
