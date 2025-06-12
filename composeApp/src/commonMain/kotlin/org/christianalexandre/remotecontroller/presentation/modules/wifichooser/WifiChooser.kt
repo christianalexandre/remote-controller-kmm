@@ -7,12 +7,19 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import org.christianalexandre.remotecontroller.common.WebSocketState
 import org.christianalexandre.remotecontroller.domain.WebsocketRepository
 import org.christianalexandre.remotecontroller.factories.Platform
 import org.christianalexandre.remotecontroller.factories.getPlatform
@@ -29,6 +36,9 @@ fun WifiChooser(
     val platform = getPlatform()
     var hasPermission by remember { mutableStateOf(false) }
     var ssid by remember { mutableStateOf<String?>(null) }
+    val webSocketState by websocketRepository.state.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     // endregion
 
     // region android
@@ -65,41 +75,61 @@ fun WifiChooser(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .systemBarsPadding()
-            .fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("You're connect in: ${ssid ?: "unknown"}")
+    LaunchedEffect(webSocketState) {
+        if (webSocketState is WebSocketState.Connected) {
+            onNavigation(Screen.Cockpit)
+        }
+        if (webSocketState is WebSocketState.Error) {
+            scope.launch {
+                snackbarHostState.showSnackbar(message = "Error: ${(webSocketState as WebSocketState.Error).reason}")
+            }
+        }
+    }
 
-        Spacer(modifier = Modifier.height(16.dp))
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .systemBarsPadding()
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("You're connect in: ${ssid ?: "unknown"}")
 
-        if (ssid == null || ssid?.contains("ESP32", ignoreCase = true) == false) {
-            Text("Couldn't confirm connection with ESP32 board")
+            Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
+            if (ssid == null || ssid?.contains("ESP32", ignoreCase = true) == false) {
+                Text("Couldn't confirm connection with ESP32 board")
 
-            Button(onClick = { goToWifiSettings() }) {
-                Text("Go to Wi-Fi settings")
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(onClick = { goToWifiSettings() }) {
+                    Text("Go to Wi-Fi settings")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-        }
+            if (ssid == null || ssid?.contains("ESP32", ignoreCase = true) == true) {
+                Spacer(modifier = Modifier.height(16.dp))
 
-        if (ssid == null || ssid?.contains("ESP32", ignoreCase = true) == true) {
-            Spacer(modifier = Modifier.height(16.dp))
+                Text("If you're connect in ESP32 network go ahead")
 
-            Text("If you're connect in ESP32 network go ahead")
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-//            Button(onClick = { onNavigation(Screen.Cockpit) }) {
-//                Text("Handshake")
-//            }
-            Button(onClick = { websocketRepository.connect("ws://192.168.4.1:8080") }) {
-                Text("Handshake")
+                Button(
+                    onClick = { websocketRepository.connect("ws://192.168.4.1:8080") },
+                    enabled = webSocketState !is WebSocketState.Connecting
+                ) {
+                    if (webSocketState is WebSocketState.Connecting) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    } else {
+                        Text("Handshake")
+                    }
+                }
             }
         }
     }
