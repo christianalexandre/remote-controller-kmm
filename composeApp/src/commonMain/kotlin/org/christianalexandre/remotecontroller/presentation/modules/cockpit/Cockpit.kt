@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import org.christianalexandre.remotecontroller.domain.WebSocketState
+import org.christianalexandre.remotecontroller.common.WebSocketState
 import org.christianalexandre.remotecontroller.domain.WebsocketRepository
 import org.christianalexandre.remotecontroller.presentation.Screen
 import kotlin.math.atan2

@@ -13,7 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
-import org.christianalexandre.remotecontroller.domain.WebSocketState
+import org.christianalexandre.remotecontroller.common.WebSocketState
 import org.christianalexandre.remotecontroller.domain.WebsocketRepository
 import org.christianalexandre.remotecontroller.factories.Platform
 import org.christianalexandre.remotecontroller.factories.getPlatform
@@ -111,7 +111,7 @@ fun WifiChooser(
         when (val state = webSocketState) {
             is WebSocketState.Error -> {
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Error: ${state.message}", color = MaterialTheme.colorScheme.error)
+                Text("Error: ${state.reason}", color = MaterialTheme.colorScheme.error)
             }
             else -> {}
         }
