@@ -1,28 +1,35 @@
 package org.christianalexandre.remotecontroller.presentation.modules.wifichooser
 
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.christianalexandre.remotecontroller.common.WebSocketState
 import org.christianalexandre.remotecontroller.domain.WebsocketRepository
-import org.christianalexandre.remotecontroller.factories.Platform
-import org.christianalexandre.remotecontroller.factories.getPlatform
+import org.christianalexandre.remotecontroller.factories.LocationPermissionHandler
 import org.christianalexandre.remotecontroller.factories.getWifiSSID
 import org.christianalexandre.remotecontroller.factories.goToWifiSettings
 import org.christianalexandre.remotecontroller.presentation.Screen
@@ -32,66 +39,45 @@ fun WifiChooser(
     websocketRepository: WebsocketRepository,
     onNavigation: (Screen) -> Unit
 ) {
-    // region common
-    val platform = getPlatform()
     var hasPermission by remember { mutableStateOf(false) }
     var ssid by remember { mutableStateOf<String?>(null) }
     val webSocketState by websocketRepository.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    // endregion
 
-    // region android
-    val context = LocalContext.current
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
+    LocationPermissionHandler { isGranted ->
         hasPermission = isGranted
     }
-    // endregion
 
-    LaunchedEffect(Unit) {
-        when (platform) {
-            Platform.Android -> {
-                val granted = ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
-
-                if (!granted) {
-                    permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                } else {
-                    hasPermission = true
-                }
+    LaunchedEffect(hasPermission) {
+        if (hasPermission) {
+            while (true) {
+                ssid = getWifiSSID()
+                delay(3000)
             }
-            Platform.IOS -> hasPermission = true
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            ssid = getWifiSSID()
-            delay(3000)
         }
     }
 
     LaunchedEffect(webSocketState) {
-        if (webSocketState is WebSocketState.Connected) {
-            onNavigation(Screen.Cockpit)
-        }
-        if (webSocketState is WebSocketState.Error) {
-            scope.launch {
-                snackbarHostState.showSnackbar(message = "Error: ${(webSocketState as WebSocketState.Error).reason}")
+        when (val currentState = webSocketState) {
+            is WebSocketState.Error -> {
+                scope.launch {
+                    snackbarHostState.showSnackbar("Error: ${currentState.reason}")
+                }
             }
+            is WebSocketState.Connected -> {
+                onNavigation(Screen.Cockpit)
+            }
+            else -> { }
         }
     }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
+    ) {
         Column(
             modifier = Modifier
-                .padding(paddingValues)
+                .padding(it)
                 .systemBarsPadding()
                 .fillMaxSize(),
             verticalArrangement = Arrangement.Center,

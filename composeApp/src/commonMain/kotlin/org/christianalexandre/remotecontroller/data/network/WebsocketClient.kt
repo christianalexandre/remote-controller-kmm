@@ -1,6 +1,5 @@
 package org.christianalexandre.remotecontroller.data.network
 
-import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.websocket.Frame
 import io.ktor.websocket.WebSocketSession
@@ -12,10 +11,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import org.christianalexandre.remotecontroller.factories.createHttpClient
 import org.christianalexandre.remotecontroller.common.WebSocketState
+import org.christianalexandre.remotecontroller.factories.createHttpClient
 
 object WebsocketClient {
     private val httpClient = createHttpClient()
@@ -35,37 +33,41 @@ object WebsocketClient {
                 httpClient.webSocket(urlString = url) {
                     session = this
                     _state.value = WebSocketState.Connected
-                    send("connected")
-                    listen(this)
+                    listen()
                 }
+                _state.value = WebSocketState.Disconnected
+                session = null
             } catch (e: Exception) {
-                _state.value = WebSocketState.Error(e.message ?: "Erro desconhecido")
+                _state.value = WebSocketState.Error(e.message ?: "Unknown error on connect")
+                session = null
             }
         }
     }
 
-    private fun listen(session: WebSocketSession) {
-        scope.launch {
-            try {
-                while (scope.isActive) {
-                    val frame = session.incoming.receive()
+    private suspend fun listen() {
+        try {
+            session?.let { currentSession ->
+                for (frame in currentSession.incoming) {
                     if (frame is Frame.Text) {
                         _state.value = WebSocketState.Message(frame.readText())
                     }
                 }
-            } catch (e: Exception) {
-                _state.value = WebSocketState.Error(e.message ?: "Erro ao receber mensagem")
-                disconnect()
             }
+        } catch (e: Exception) {
+            _state.value = WebSocketState.Error(e.message ?: "Unknown error on listen")
         }
     }
 
     fun send(message: String) {
         scope.launch {
+            if (session == null) {
+                _state.value = WebSocketState.Error("Session null on send message")
+                return@launch
+            }
             try {
-                (session as? DefaultClientWebSocketSession)?.send(Frame.Text(message))
+                session?.send(Frame.Text(message))
             } catch (e: Exception) {
-                _state.value = WebSocketState.Error(e.message ?: "Erro ao enviar mensagem")
+                _state.value = WebSocketState.Error(e.message ?: "Unknown error on send message")
             }
         }
     }
@@ -74,10 +76,8 @@ object WebsocketClient {
         scope.launch {
             try {
                 session?.close()
-                session = null
-                _state.value = WebSocketState.Disconnected
             } catch (e: Exception) {
-                _state.value = WebSocketState.Error(e.message ?: "Erro ao desconectar")
+                _state.value = WebSocketState.Error(e.message ?: "Unknown error on disconnect")
             }
         }
     }
