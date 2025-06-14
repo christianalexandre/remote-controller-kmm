@@ -11,7 +11,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
@@ -34,8 +33,8 @@ fun Cockpit(
 
     val webSocketState by websocketRepository.state.collectAsState()
 
-    val joystickSize = 200.dp
-    val thumbSize = 50.dp
+    val joystickSize = 275.dp // Increased from 200.dp
+    val thumbSize = 70.dp    // Increased proportionally from 50.dp
     val joystickRadius = joystickSize.value / 2f // Use float for calculations
     val thumbRadius = thumbSize.value / 2f   // Use float for calculations
     val maxJoystickDisplacement = joystickRadius - thumbRadius
@@ -110,7 +109,7 @@ fun Cockpit(
             // Outer Circle (Base)
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawCircle(
-                    color = Color.LightGray,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     radius = joystickRadius, // Use the original joystickRadius for drawing
                     style = Stroke(width = 2.dp.toPx())
                 )
@@ -125,7 +124,7 @@ fun Cockpit(
                     )
                     .size(thumbSize)
                     .clip(CircleShape)
-                    .background(Color.DarkGray)
+                    .background(MaterialTheme.colorScheme.primary)
                     .align(Alignment.Center) // Align thumb to the center of the Box initially
             )
         }

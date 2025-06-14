@@ -7,9 +7,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import org.christianalexandre.remotecontroller.data.network.WebsocketClient
 import org.christianalexandre.remotecontroller.data.repositories.WebsocketRepositoryImpl
-import org.christianalexandre.remotecontroller.factories.createHttpClient
 import org.christianalexandre.remotecontroller.presentation.modules.cockpit.Cockpit
 import org.christianalexandre.remotecontroller.presentation.modules.wifichooser.WifiChooser
+import org.christianalexandre.remotecontroller.presentation.theme.AppTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 sealed class Screen {
@@ -24,8 +24,10 @@ fun App() {
     val websocketRepository = remember { WebsocketRepositoryImpl() }
     val onNavigation: (Screen) -> Unit = { currentScreen = it }
 
-    when (currentScreen) {
-        is Screen.WifiChooser -> WifiChooser(websocketRepository, onNavigation)
-        is Screen.Cockpit -> Cockpit(websocketRepository, onNavigation)
+    AppTheme {
+        when (currentScreen) {
+            is Screen.WifiChooser -> WifiChooser(websocketRepository, onNavigation)
+            is Screen.Cockpit -> Cockpit(websocketRepository, onNavigation)
+        }
     }
 }
