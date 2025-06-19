@@ -92,7 +92,7 @@ fun Cockpit(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(text = "Normalized X: ${formatFloat(joystickState.first, 2)}")
-                Text(text = "Normalized X: ${formatFloat(joystickState.second, 2)}")
+                Text(text = "Normalized Y: ${formatFloat(joystickState.second, 2)}")
             }
 
             Box(
