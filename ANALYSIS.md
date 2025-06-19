@@ -1,0 +1,64 @@
+# KMM Project Analysis
+
+This document outlines the architecture and key functionalities of the KMM project for controlling an ESP32-based robot.
+
+## Overall Architecture
+
+The project follows a Kotlin Multiplatform Mobile (KMM) architecture, enabling shared business logic and data handling between Android and iOS applications.
+
+- **Shared Module:** Contains the core logic, including WebSocket communication, data processing, and view models. This module is written in Kotlin and compiled to platform-specific code.
+- **Android App:** Implements the Android UI, interacts with the shared module, and handles platform-specific functionalities like Bluetooth and sensor input.
+- **iOS App:** Implements the iOS UI, interacts with the shared module, and handles platform-specific functionalities.
+
+## WebSocket Communication (Ktor)
+
+WebSocket communication is used to send control commands to the ESP32.
+
+- **Ktor Client:** The Ktor library is utilized to implement the WebSocket client in the shared module.
+- **Connection Management:** The `ControllerViewModel` manages the WebSocket connection lifecycle, including establishing the connection, sending messages, and handling disconnection.
+- **Message Serialization:** Data sent over WebSocket is serialized, likely into a JSON format, although the specific format needs to be confirmed by inspecting the ESP32's WebSocket server implementation.
+
+## Joystick Input
+
+Joystick input is captured and processed to control the robot's movement.
+
+- **Android Implementation:** The `JoystickView` composable in the Android app captures touch events and translates them into directional data (angle and strength).
+- **Data Normalization:** The joystick data is normalized, typically to a range of -1 to 1 for each axis.
+- **Event Emission:** The `ControllerViewModel` receives joystick data updates from the UI and formats them for WebSocket transmission.
+
+## Data Formatting and Transmission
+
+Control data, primarily from the joystick, is formatted and sent to the ESP32 via WebSocket.
+
+- **Data Structure:** The exact data structure sent to the ESP32 needs to be verified, but it likely includes parameters for movement direction and speed.
+- **Transmission Trigger:** Data is sent whenever there's a significant change in joystick input or other control parameters.
+- **Error Handling:** The implementation should include error handling for WebSocket connection issues and message transmission failures.
+
+## Navigation Flow
+
+The app's navigation flow is managed by Jetpack Navigation Compose.
+
+- **Destinations:** The app defines several destinations, including:
+    - `Home`: The main screen, potentially displaying connection status and controls.
+    - `Controller`: The screen with the joystick and other robot controls.
+- **Navigation Actions:** Navigation between screens is triggered by user interactions, such as button clicks.
+- **`NavHostController`:** The `NavHostController` manages the navigation stack and transitions between composables.
+- **`Screen` Sealed Class:** A `Screen` sealed class is used to define the navigation routes and provide a type-safe way to navigate.
+
+This analysis provides a high-level overview of the KMM project. Further details can be obtained by examining the source code of each module and component.
+
+## Key Components and Their Roles
+
+- **`WebsocketClient.kt`**: This file, located in the shared module (`shared/src/commonMain/kotlin/com/example/kmm_app/android/networking/`), is responsible for establishing and managing the WebSocket connection using Ktor. It handles sending messages to the ESP32 and receiving messages from it. It likely encapsulates the low-level details of WebSocket communication.
+
+- **`WebsocketRepository.kt` / `WebsocketRepositoryImpl.kt`**:
+    - `WebsocketRepository.kt` (in `shared/src/commonMain/kotlin/com/example/kmm_app/android/data/`) defines the interface for interacting with the WebSocket. It abstracts the data source, providing methods to send data and observe incoming data or connection states.
+    - `WebsocketRepositoryImpl.kt` (in `shared/src/commonMain/kotlin/com/example/kmm_app/android/data/`) is the concrete implementation of the `WebsocketRepository` interface. It utilizes `WebsocketClient.kt` to perform the actual WebSocket operations. This separation follows the repository pattern, decoupling business logic from specific data source implementations.
+
+- **`App.kt`**: This file, typically found in the Android application module (e.g., `androidApp/src/main/java/com/example/kmm_app/android/App.kt`), likely represents the main application class for the Android app. It's often used for initializing application-level components, dependency injection frameworks (like Koin), and setting up global configurations.
+
+- **`Cockpit.kt`**: This file (located at `androidApp/src/main/java/com/example/kmm_app/android/screens/Cockpit.kt`) defines a Composable function that represents the main control screen of the Android application. It's where UI elements like the joystick, connection status indicators, and other controls are displayed. It interacts with a ViewModel (likely `ControllerViewModel`) to send commands and observe state changes.
+
+## Conclusion
+
+The repository contains a Kotlin Multiplatform Mobile (KMM) application designed to control an ESP32-based car. Communication with the ESP32 is handled via WebSocket, and the car's movement is controlled using a virtual joystick implemented in the mobile application. The analysis of the codebase indicates a well-structured project that adheres to common KMM and Jetpack Compose (and likely Compose Multiplatform for the shared UI aspects) patterns, separating concerns into appropriate modules and components. Key elements include a shared networking layer using Ktor for WebSocket communication, a repository pattern for data handling, and a reactive UI built with Compose.
