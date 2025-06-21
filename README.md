@@ -1,14 +1,10 @@
-This is a Kotlin Multiplatform project targeting Android, iOS.
+This project is a Kotlin Multiplatform Mobile (KMM) application that functions as a remote control for a physical cart. It communicates with the cart via Wi-Fi using Ktor for network requests. The app allows users to control the cart's movements and potentially other functionalities.
 
-* `/composeApp` is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - `commonMain` is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    `iosMain` would be the right folder for such calls.
+## Application Screenshot
+![App Screenshot Placeholder](placeholder_app.png)
 
-* `/iosApp` contains iOS applications. Even if you’re sharing your UI with Compose Multiplatform, 
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+## Cart Screenshot
+![Cart Screenshot Placeholder](placeholder_cart.png)
 
-
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+## Effective Distance Measurement
+![Effective Distance Placeholder](placeholder_distance.png)
